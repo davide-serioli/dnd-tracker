@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D&D Combat Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0d0b;
+    --bg2: #1a1610;
+    --bg3: #241f18;
+    --bg4: #2e2820;
+    --border: #3d3428;
+    --border2: #5a4e3a;
+    --gold: #c9a84c;
+    --gold2: #e8c96e;
+    --red: #c0392b;
+    --red2: #e74c3c;
+    --green: #27ae60;
+    --green2: #2ecc71;
+    --blue: #2980b9;
+    --blue2: #3498db;
+    --text: #e8dfc8;
+    --text2: #b5a98a;
+    --text3: #7a6e58;
+    --player-color: #3d8b5e;
+    --player-bg: #1a2e22;
+    --enemy-color: #8b3d3d;
+    --enemy-bg: #2e1a1a;
+    --npc-color: #5a7a8b;
+    --npc-bg: #1a2530;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    min-height: 100vh;
+  }
+  /* Texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.4rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  header p { color: var(--text3); font-style: italic; font-size: 14px; margin-top: 4px; }
+
+  /* TOP BAR */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .round-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 16px;
+  }
+  .round-label { font-family: 'Cinzel', serif; font-size: 13px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .round-num { font-family: 'Cinzel', serif; font-size: 1.6rem; color: var(--gold); font-weight: 700; min-width: 40px; text-align: center; }
+  .btn {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { background: var(--bg4); border-color: var(--gold); color: var(--gold); }
+  .btn.primary { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600; }
+  .btn.primary:hover { background: var(--gold2); border-color: var(--gold2); }
+  .btn.danger { border-color: var(--red); color: var(--red2); }
+  .btn.danger:hover { background: var(--red); color: #fff; }
+  .btn.next-turn { background: #2d4a1e; border-color: #4a7a2e; color: #7fc45a; font-size: 13px; padding: 10px 24px; }
+  .btn.next-turn:hover { background: #3d6628; border-color: #7fc45a; }
+  .spacer { flex: 1; }
+
+  /* LAYOUT */
+  .main-grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 760px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* ADD FORM */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .panel-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .form-row { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 15px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+  select option { background: var(--bg3); }
+  .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dice-btn {
+    margin-top: 5px;
+    font-size: 11px;
+    padding: 4px 10px;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    color: var(--text3);
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Crimson Pro', serif;
+    transition: color 0.1s, border-color 0.1s;
+  }
+  .dice-btn:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* COMBATANT LIST */
+  .combat-list { display: flex; flex-direction: column; gap: 10px; }
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text3);
+    font-style: italic;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+  }
+
+  .combatant {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+  .combatant.player { border-left: 3px solid var(--player-color); }
+  .combatant.enemy { border-left: 3px solid var(--enemy-color); }
+  .combatant.npc { border-left: 3px solid var(--npc-color); }
+  .combatant.active {
+    border-color: var(--gold);
+    background: #1e1b12;
+  }
+  .combatant.active::before {
+    content: '⚔';
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold);
+    font-size: 14px;
+  }
+  .combatant.dead { opacity: 0.45; }
+  .c-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .c-initiative {
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--gold);
+    min-width: 36px;
+    text-align: center;
+    background: var(--bg4);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .c-name {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+  }
+  .combatant.player .c-name { color: #7fc490; }
+  .combatant.enemy .c-name { color: #e07070; }
+  .combatant.npc .c-name { color: #7aa8c4; }
+  .c-type-badge {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-family: 'Cinzel', serif;
+  }
+  .combatant.player .c-type-badge { background: var(--player-bg); color: var(--player-color); }
+  .combatant.enemy .c-type-badge { background: var(--enemy-bg); color: var(--enemy-color); }
+  .combatant.npc .c-type-badge { background: var(--npc-bg); color: var(--npc-color); }
+
+  .c-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+  .hp-block { display: flex; align-items: center; gap: 6px; }
+  .hp-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .hp-display {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .hp-display.full { color: var(--green2); }
+  .hp-display.hurt { color: var(--gold2); }
+  .hp-display.crit { color: var(--red2); }
+  .hp-display.dead { color: var(--text3); }
+  .hp-bar-wrap { flex: 1; min-width: 80px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+  .hp-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .ac-block { font-size: 13px; color: var(--text2); }
+  .ac-block span { color: var(--blue2); font-family: 'Cinzel', serif; font-weight: 600; }
+
+  .c-controls { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .hp-input { width: 60px; text-align: center; padding: 5px 6px; font-size: 14px; }
+  .btn-sm {
+    font-size: 12px;
+    padding: 5px 10px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Crimson Pro', serif;
+    transition: background 0.1s;
+  }
+  .btn-sm:hover { background: var(--bg4); }
+  .btn-sm.heal { color: var(--green2); border-color: var(--green); }
+  .btn-sm.heal:hover { background: #152a1e; }
+  .btn-sm.dmg { color: var(--red2); border-color: var(--red); }
+  .btn-sm.dmg:hover { background: #2a1515; }
+  .btn-sm.remove { color: var(--text3); border-color: var(--border); margin-left: auto; }
+  .btn-sm.remove:hover { color: var(--red2); border-color: var(--red); }
+
+  .c-notes-wrap { margin-top: 8px; }
+  .c-notes-wrap textarea { height: 54px; font-size: 14px; resize: vertical; }
+  .conditions-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .condition {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid;
+    cursor: pointer;
+    font-family: 'Crimson Pro', serif;
+    transition: opacity 0.1s;
+    user-select: none;
+  }
+  .condition.active { opacity: 1; }
+  .condition:not(.active) { opacity: 0.3; }
+
+  /* CONDITIONS */
+  .conditions-palette { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .cond-btn { font-size: 11px; padding: 3px 9px; border-radius: 12px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text3); cursor: pointer; font-family: 'Crimson Pro', serif; }
+  .cond-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* DEATH SAVES */
+  .death-saves { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--text3); }
+  .save-dots { display: flex; gap: 4px; }
+  .save-dot {
+    width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--border2); cursor: pointer; background: var(--bg4);
+    transition: background 0.1s;
+  }
+  .save-dot.success { background: var(--green); border-color: var(--green2); }
+  .save-dot.fail { background: var(--red); border-color: var(--red2); }
+
+  /* EXPAND toggle */
+  .expand-btn { font-size: 12px; color: var(--text3); cursor: pointer; user-select: none; background: none; border: none; padding: 0; font-family: 'Crimson Pro', serif; }
+  .expand-btn:hover { color: var(--text2); }
+  .expanded-section { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .hidden { display: none; }
+
+  /* TURN indicator */
+  .turn-banner {
+    background: #1e1b12;
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+  }
+  .turn-banner .who { color: var(--gold2); font-weight: 600; }
+  .turn-banner .sub { color: var(--text3); font-size: 12px; }
+  .turn-banner.hidden-banner { display: none; }
+
+  /* TOOLTIP / ALERT */
+  .alert { border-radius: 5px; padding: 8px 14px; font-size: 14px; margin-bottom: 12px; }
+  .alert.info { background: #1a2530; border: 1px solid var(--blue); color: var(--blue2); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⚔ Combat Tracker</h1>
+    <p>Dungeons &amp; Dragons — Gestione combattimenti</p>
+  </header>
+
+  <div class="top-bar">
+    <div class="round-block">
+      <span class="round-label">Round</span>
+      <span class="round-num" id="roundNum">1</span>
+    </div>
+    <button class="btn next-turn" onclick="nextTurn()">Prossimo turno ›</button>
+    <button class="btn" onclick="sortByInitiative()">Ordina per iniziativa</button>
+    <span class="spacer"></span>
+    <button class="btn danger" onclick="resetCombat()">Nuovo combattimento</button>
+  </div>
+
+  <div id="turnBanner" class="turn-banner hidden-banner">
+    <span>⚔</span>
+    <span>Turno di: <span class="who" id="turnName">—</span></span>
+    <span class="sub" id="turnSub"></span>
+  </div>
+
+  <div class="main-grid">
+    <!-- ADD FORM -->
+    <div class="panel" id="addPanel">
+      <div class="panel-title">Aggiungi combattente</div>
+
+      <div class="form-row">
+        <label>Nome</label>
+        <input type="text" id="fName" placeholder="Es. Arannis, Goblin Arciere…" />
+      </div>
+
+      <div class="form-row">
+        <label>Tipo</label>
+        <select id="fType">
+          <option value="player">Giocatore (PG)</option>
+          <option value="enemy">Nemico</option>
+          <option value="npc">PNG / Alleato</option>
+        </select>
+      </div>
+
+      <div class="form-2col">
+        <div class="form-row">
+          <label>HP Massimi</label>
+          <input type="number" id="fMaxHp" min="1" value="10" />
+        </div>
+        <div class="form-row">
+          <label>CA (Armatura)</label>
+          <input type="number" id="fAc" min="1" value="12" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Iniziativa</label>
+        <input type="number" id="fInit" min="-5" max="30" value="10" />
+        <button class="dice-btn" onclick="rollInitiative()">🎲 Tira d20 + mod</button>
+      </div>
+
+      <div class="form-row">
+        <label>Bonus Iniziativa (opzionale)</label>
+        <input type="number" id="fInitBonus" value="0" min="-5" max="10" />
+      </div>
+
+      <div class="form-row">
+        <label>Note iniziali</label>
+        <textarea id="fNotes" rows="2" placeholder="Concentrazione, effetti attivi…"></textarea>
+      </div>
+
+      <button class="btn primary" style="width:100%;margin-top:4px" onclick="addCombatant()">+ Aggiungi</button>
+
+      <hr>
+      <div class="panel-title" style="margin-top:0">Tiro di dado</div>
+      <div id="diceResult" class="alert info hidden">—</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="rollDice(20)">d20</button>
+        <button class="btn" onclick="rollDice(12)">d12</button>
+        <button class="btn" onclick="rollDice(10)">d10</button>
+        <button class="btn" onclick="rollDice(8)">d8</button>
+        <button class="btn" onclick="rollDice(6)">d6</button>
+        <button class="btn" onclick="rollDice(4)">d4</button>
+      </div>
+    </div>
+
+    <!-- COMBAT LIST -->
+    <div>
+      <div id="combatList" class="combat-list">
+        <div class="empty-state">Nessun combattente.<br>Aggiungi giocatori e nemici per iniziare.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONDITIONS = [
+  { name: 'Avvelenato', color: '#3a6e2a' },
+  { name: 'Accecato', color: '#4a4a1a' },
+  { name: 'Stordito', color: '#4a2a6e' },
+  { name: 'Incarcerato', color: '#6e2a2a' },
+  { name: 'Prono', color: '#4a3a1a' },
+  { name: 'Spaventato', color: '#6e4a1a' },
+  { name: 'Incapacitato', color: '#3a3a3a' },
+  { name: 'Invisibile', color: '#1a4a4a' },
+  { name: 'Paralizzato', color: '#1a2a6e' },
+  { name: 'Concentrazione', color: '#2a4a6e' },
+];
+
+let combatants = [];
+let currentTurnIndex = -1;
+let round = 1;
+let nextId = 1;
+
+function rollDice(sides) {
+  const result = Math.floor(Math.random() * sides) + 1;
+  const el = document.getElementById('diceResult');
+  el.classList.remove('hidden');
+  el.textContent = `d${sides}: ${result}`;
+  return result;
+}
+
+function rollInitiative() {
+  const d20 = Math.floor(Math.random() * 20) + 1;
+  const bonus = parseInt(document.getElementById('fInitBonus').value) || 0;
+  const total = d20 + bonus;
+  document.getElementById('fInit').value = total;
+  const el = document.getElementById('diceResult');
+  el.classList.remove('hidden');
+  el.textContent = `Iniziativa: d20(${d20}) + ${bonus} = ${total}`;
+}
+
+function addCombatant() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { alert('Inserisci un nome!'); return; }
+  const maxHp = parseInt(document.getElementById('fMaxHp').value) || 10;
+  const c = {
+    id: nextId++,
+    name,
+    type: document.getElementById('fType').value,
+    maxHp,
+    hp: maxHp,
+    ac: parseInt(document.getElementById('fAc').value) || 10,
+    initiative: parseInt(document.getElementById('fInit').value) || 0,
+    notes: document.getElementById('fNotes').value,
+    conditions: [],
+    deathSaves: { success: 0, fail: 0 },
+    expanded: false,
+  };
+  combatants.push(c);
+  document.getElementById('fName').value = '';
+  document.getElementById('fNotes').value = '';
+  document.getElementById('fInit').value = 10;
+  renderList();
+}
+
+function removeC(id) {
+  if (!confirm('Rimuovere questo combattente?')) return;
+  const idx = combatants.findIndex(c => c.id === id);
+  combatants.splice(idx, 1);
+  if (currentTurnIndex >= combatants.length) currentTurnIndex = combatants.length - 1;
+  renderList();
+}
+
+function sortByInitiative() {
+  combatants.sort((a, b) => b.initiative - a.initiative);
+  currentTurnIndex = combatants.length > 0 ? 0 : -1;
+  renderList();
+}
+
+function nextTurn() {
+  if (combatants.length === 0) return;
+  if (currentTurnIndex === -1) { currentTurnIndex = 0; }
+  else {
+    currentTurnIndex = (currentTurnIndex + 1) % combatants.length;
+    if (currentTurnIndex === 0) round++;
+  }
+  document.getElementById('roundNum').textContent = round;
+  renderList();
+}
+
+function adjustHp(id, delta) {
+  const c = combatants.find(x => x.id === id);
+  if (!c) return;
+  const inputEl = document.getElementById('hpInput_' + id);
+  const val = parseInt(inputEl ? inputEl.value : 0) || 0;
+  if (val === 0) return;
+  c.hp = Math.max(0, Math.min(c.maxHp, c.hp + delta * val));
+  renderList();
+}
+
+function toggleCondition(id, condName) {
+  const c = combatants.find(x => x.id === id);
+  if (!c) return;
+  const idx = c.conditions.indexOf(condName);
+  if (idx >= 0) c.conditions.splice(idx, 1);
+  else c.conditions.push(condName);
+  renderList();
+}
+
+function updateNotes(id, val) {
+  const c = combatants.find(x => x.id === id);
+  if (c) c.notes = val;
+}
+
+function toggleDeathSave(id, type, idx) {
+  const c = combatants.find(x => x.id === id);
+  if (!c) return;
+  const key = type === 'success' ? 'success' : 'fail';
+  c.deathSaves[key] = c.deathSaves[key] === idx + 1 ? idx : idx + 1;
+  renderList();
+}
+
+function toggleExpand(id) {
+  const c = combatants.find(x => x.id === id);
+  if (c) { c.expanded = !c.expanded; renderList(); }
+}
+
+function resetCombat() {
+  if (combatants.length && !confirm('Iniziare un nuovo combattimento? Tutti i dati verranno persi.')) return;
+  combatants = [];
+  currentTurnIndex = -1;
+  round = 1;
+  document.getElementById('roundNum').textContent = 1;
+  renderList();
+}
+
+function hpColor(c) {
+  if (c.hp === 0) return 'dead';
+  const pct = c.hp / c.maxHp;
+  if (pct > 0.6) return 'full';
+  if (pct > 0.3) return 'hurt';
+  return 'crit';
+}
+
+function hpBarColor(c) {
+  const pct = c.hp / c.maxHp;
+  if (c.hp === 0) return '#444';
+  if (pct > 0.6) return '#27ae60';
+  if (pct > 0.3) return '#e5a020';
+  return '#c0392b';
+}
+
+function renderList() {
+  const el = document.getElementById('combatList');
+  if (combatants.length === 0) {
+    el.innerHTML = '<div class="empty-state">Nessun combattente.<br>Aggiungi giocatori e nemici per iniziare.</div>';
+    document.getElementById('turnBanner').classList.add('hidden-banner');
+    return;
+  }
+
+  const active = currentTurnIndex >= 0 ? combatants[currentTurnIndex] : null;
+  if (active) {
+    document.getElementById('turnBanner').classList.remove('hidden-banner');
+    document.getElementById('turnName').textContent = active.name;
+    document.getElementById('turnSub').textContent = `HP: ${active.hp}/${active.maxHp} · CA: ${active.ac} · Round ${round}`;
+  } else {
+    document.getElementById('turnBanner').classList.add('hidden-banner');
+  }
+
+  el.innerHTML = combatants.map((c, i) => {
+    const isActive = i === currentTurnIndex;
+    const isDead = c.hp === 0;
+    const pct = c.maxHp > 0 ? (c.hp / c.maxHp * 100) : 0;
+    const hpCls = hpColor(c);
+    const barColor = hpBarColor(c);
+    const typeLabel = c.type === 'player' ? 'PG' : c.type === 'enemy' ? 'Nemico' : 'PNG';
+
+    const condHTML = CONDITIONS.map(cond => {
+      const on = c.conditions.includes(cond.name);
+      return `<span class="condition ${on ? 'active' : ''}" 
+        style="border-color:${cond.color};color:${cond.color};background:${on ? cond.color + '22' : 'transparent'}"
+        onclick="toggleCondition(${c.id},'${cond.name}')">${cond.name}</span>`;
+    }).join('');
+
+    const deathHTML = isDead && c.type === 'player' ? `
+      <div class="death-saves">
+        <span>Tiri salvezza morte — Successi:</span>
+        <div class="save-dots">${[0,1,2].map(j => `<div class="save-dot ${j < c.deathSaves.success ? 'success' : ''}" onclick="toggleDeathSave(${c.id},'success',${j})"></div>`).join('')}</div>
+        <span>Fallimenti:</span>
+        <div class="save-dots">${[0,1,2].map(j => `<div class="save-dot ${j < c.deathSaves.fail ? 'fail' : ''}" onclick="toggleDeathSave(${c.id},'fail',${j})"></div>`).join('')}</div>
+      </div>` : '';
+
+    return `
+    <div class="combatant ${c.type} ${isActive ? 'active' : ''} ${isDead ? 'dead' : ''}">
+      <div class="c-header">
+        <div class="c-initiative">${c.initiative}</div>
+        <div class="c-name">${escHtml(c.name)}</div>
+        <span class="c-type-badge">${typeLabel}</span>
+        <button class="expand-btn" onclick="toggleExpand(${c.id})">${c.expanded ? '▲ meno' : '▼ più'}</button>
+      </div>
+
+      <div class="c-body">
+        <div class="hp-block">
+          <span class="hp-label">HP</span>
+          <span class="hp-display ${hpCls}">${c.hp} / ${c.maxHp}</span>
+        </div>
+        <div class="hp-bar-wrap">
+          <div class="hp-bar" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div class="ac-block">CA <span>${c.ac}</span></div>
+      </div>
+
+      <div class="c-controls">
+        <input type="number" id="hpInput_${c.id}" class="hp-input" value="1" min="0" />
+        <button class="btn-sm dmg" onclick="adjustHp(${c.id}, -1)">− Danno</button>
+        <button class="btn-sm heal" onclick="adjustHp(${c.id}, +1)">+ Cura</button>
+        <button class="btn-sm remove" onclick="removeC(${c.id})">✕ Rimuovi</button>
+      </div>
+
+      ${deathHTML}
+
+      ${c.expanded ? `
+      <div class="expanded-section">
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Condizioni</div>
+        <div class="conditions-row">${condHTML}</div>
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 5px">Note</div>
+        <textarea oninput="updateNotes(${c.id},this.value)" style="width:100%;height:60px;font-size:14px;resize:vertical;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 10px;font-family:'Crimson Pro',serif">${escHtml(c.notes)}</textarea>
+      </div>` : c.conditions.length > 0 ? `
+      <div class="conditions-row" style="margin-top:8px">
+        ${c.conditions.map(cn => {
+          const cond = CONDITIONS.find(x => x.name === cn);
+          return cond ? `<span class="condition active" style="border-color:${cond.color};color:${cond.color};background:${cond.color}22">${cn}</span>` : '';
+        }).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+renderList();
+</script>
+</body>
+</html>
