@@ -174,12 +174,20 @@
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--gold);
-    min-width: 36px;
+    width: 52px;
     text-align: center;
     background: var(--bg4);
+    border: 1px solid transparent;
     border-radius: 4px;
     padding: 2px 6px;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
   }
+  .c-initiative::-webkit-outer-spin-button,
+  .c-initiative::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .c-initiative:hover { border-color: var(--border2); }
+  .c-initiative:focus { border-color: var(--gold); }
   .c-name {
     font-family: 'Cinzel', serif;
     font-size: 1rem;
@@ -335,6 +343,25 @@
 </div>
 
 <script>
+const SAVE_KEY = 'dnd_tracker_v1';
+
+function saveState() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify({ combatants, currentTurnIndex, round, nextId }));
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    combatants = s.combatants || [];
+    currentTurnIndex = s.currentTurnIndex ?? -1;
+    round = s.round || 1;
+    nextId = s.nextId || 1;
+    document.getElementById('roundNum').textContent = round;
+  } catch(e) {}
+}
+
 let combatants = [];
 let currentTurnIndex = -1;
 let round = 1;
@@ -363,6 +390,7 @@ function addCombatant() {
   document.getElementById('fName').value = '';
   document.getElementById('fNotes').value = '';
   document.getElementById('fInit').value = 10;
+  saveState();
   renderList();
 }
 
@@ -371,12 +399,14 @@ function removeC(id) {
   const idx = combatants.findIndex(c => c.id === id);
   combatants.splice(idx, 1);
   if (currentTurnIndex >= combatants.length) currentTurnIndex = combatants.length - 1;
+  saveState();
   renderList();
 }
 
 function sortByInitiative() {
   combatants.sort((a, b) => b.initiative - a.initiative);
   currentTurnIndex = combatants.length > 0 ? 0 : -1;
+  saveState();
   renderList();
 }
 
@@ -388,6 +418,7 @@ function nextTurn() {
     if (currentTurnIndex === 0) round++;
   }
   document.getElementById('roundNum').textContent = round;
+  saveState();
   renderList();
 }
 
@@ -397,12 +428,18 @@ function adjustHp(id, delta) {
   const val = parseInt(document.getElementById('hpInput_' + id).value) || 0;
   if (val === 0) return;
   c.hp = Math.max(0, Math.min(c.maxHp, c.hp + delta * val));
+  saveState();
   renderList();
 }
 
 function updateNotes(id, val) {
   const c = combatants.find(x => x.id === id);
-  if (c) c.notes = val;
+  if (c) { c.notes = val; saveState(); }
+}
+
+function updateInitiative(id, val) {
+  const c = combatants.find(x => x.id === id);
+  if (c) { c.initiative = parseInt(val) || 0; saveState(); }
 }
 
 function resetCombat() {
@@ -411,6 +448,7 @@ function resetCombat() {
   currentTurnIndex = -1;
   round = 1;
   document.getElementById('roundNum').textContent = 1;
+  saveState();
   renderList();
 }
 
@@ -457,7 +495,7 @@ function renderList() {
     return `
     <div class="combatant ${isActive ? 'active' : ''} ${c.hp === 0 ? 'dead' : ''}">
       <div class="c-header">
-        <div class="c-initiative">${c.initiative}</div>
+        <input type="number" class="c-initiative" value="${c.initiative}" min="-5" max="30" onchange="updateInitiative(${c.id}, this.value)" title="Iniziativa" />
         <div class="c-name">${escHtml(c.name)}</div>
         <button class="btn-sm remove" onclick="removeC(${c.id})">✕ Rimuovi</button>
       </div>
@@ -481,6 +519,7 @@ function renderList() {
   }).join('');
 }
 
+loadState();
 renderList();
 </script>
 </body>
