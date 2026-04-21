@@ -130,7 +130,33 @@
     outline: none;
     transition: border-color 0.15s;
   }
-  input:focus, textarea:focus { border-color: var(--gold); }
+  input.stat-input {
+    width: 48px;
+    text-align: center;
+    padding: 3px 4px;
+    font-size: 14px;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    background: var(--bg4);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    -moz-appearance: textfield;
+    flex-shrink: 0;
+  }
+  input.stat-input::-webkit-outer-spin-button,
+  input.stat-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input.stat-input:hover { border-color: var(--border2); }
+  input.stat-input.init { width: 34px; font-size: 12px; color: var(--text3); }
+  input.stat-input.init:focus { border-color: var(--gold); color: var(--gold); }
+  input.stat-input.hp-cur { color: var(--green2); }
+  input.stat-input.hp-cur.hurt { color: var(--gold2); }
+  input.stat-input.hp-cur.crit { color: var(--red2); }
+  input.stat-input.hp-cur.dead { color: var(--text3); }
+  input.stat-input.hp-cur:focus { border-color: var(--green); }
+  input.stat-input.hp-max { color: var(--text2); }
+  input.stat-input.hp-max:focus { border-color: var(--border2); }
+  input.stat-input.ac { color: var(--blue2); }
+  input.stat-input.ac:focus { border-color: var(--blue2); }
   .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
@@ -168,27 +194,7 @@
   }
   .combatant.dead { opacity: 0.45; }
 
-  .c-header { display: flex; align-items: center; gap: 10px; }
-  .c-initiative {
-    font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text3);
-    width: 36px;
-    text-align: center;
-    background: var(--bg4);
-    border: 1px solid transparent;
-    border-radius: 3px;
-    padding: 2px 4px;
-    outline: none;
-    transition: border-color 0.15s, color 0.15s;
-    -moz-appearance: textfield;
-    flex-shrink: 0;
-  }
-  .c-initiative::-webkit-outer-spin-button,
-  .c-initiative::-webkit-inner-spin-button { -webkit-appearance: none; }
-  .c-initiative:hover { border-color: var(--border2); color: var(--text2); }
-  .c-initiative:focus { border-color: var(--gold); color: var(--gold); }
+  .c-header { display: flex; align-items: center; gap: 8px; }
   .c-name {
     font-family: 'Cinzel', serif;
     font-size: 1.25rem;
@@ -196,41 +202,33 @@
     flex: 1;
     color: var(--text);
     letter-spacing: 0.04em;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .c-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
-  .hp-block { display: flex; align-items: center; gap: 6px; }
-  .hp-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-  .hp-display { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 600; }
-  .hp-display.full { color: var(--green2); }
-  .hp-display.hurt { color: var(--gold2); }
-  .hp-display.crit { color: var(--red2); }
-  .hp-display.dead { color: var(--text3); }
-  .hp-bar-wrap { flex: 1; min-width: 80px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+  .c-stats { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: nowrap; }
+  .stat-group { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .stat-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stat-sep { font-size: 13px; color: var(--text3); }
+  .hp-bar-wrap { flex: 1; min-width: 60px; height: 5px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
   .hp-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
-  .ac-block { font-size: 13px; color: var(--text2); white-space: nowrap; }
-  .ac-block span { color: var(--blue2); font-family: 'Cinzel', serif; font-weight: 600; }
 
-  .c-controls { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-  .hp-input { width: 60px; text-align: center; padding: 5px 6px; font-size: 14px; }
   .btn-sm {
     font-size: 12px;
-    padding: 5px 10px;
-    border: 1px solid var(--border2);
+    padding: 4px 9px;
+    border: 1px solid var(--border);
     background: var(--bg3);
-    color: var(--text);
+    color: var(--text3);
     border-radius: 4px;
     cursor: pointer;
     font-family: 'Crimson Pro', serif;
-    transition: background 0.1s;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
-  .btn-sm:hover { background: var(--bg4); }
-  .btn-sm.heal { color: var(--green2); border-color: var(--green); }
-  .btn-sm.heal:hover { background: #152a1e; }
-  .btn-sm.dmg { color: var(--red2); border-color: var(--red); }
-  .btn-sm.dmg:hover { background: #2a1515; }
-  .btn-sm.remove { color: var(--text3); border-color: var(--border); }
-  .btn-sm.remove:hover { color: var(--red2); border-color: var(--red); }
+  .btn-sm.remove:hover { color: var(--red2); border-color: var(--red); background: #2a1515; }
 
   .c-notes {
     margin-top: 10px;
@@ -424,14 +422,24 @@ function nextTurn() {
   renderList();
 }
 
-function adjustHp(id, delta) {
+function updateHp(id, val) {
   const c = combatants.find(x => x.id === id);
   if (!c) return;
-  const val = parseInt(document.getElementById('hpInput_' + id).value) || 0;
-  if (val === 0) return;
-  c.hp = Math.max(0, Math.min(c.maxHp, c.hp + delta * val));
-  saveState();
-  renderList();
+  c.hp = Math.max(0, Math.min(c.maxHp, parseInt(val) || 0));
+  saveState(); renderList();
+}
+
+function updateMaxHp(id, val) {
+  const c = combatants.find(x => x.id === id);
+  if (!c) return;
+  c.maxHp = Math.max(1, parseInt(val) || 1);
+  c.hp = Math.min(c.hp, c.maxHp);
+  saveState(); renderList();
+}
+
+function updateAc(id, val) {
+  const c = combatants.find(x => x.id === id);
+  if (c) { c.ac = Math.max(1, parseInt(val) || 10); saveState(); }
 }
 
 function updateNotes(id, val) {
@@ -497,24 +505,22 @@ function renderList() {
     return `
     <div class="combatant ${isActive ? 'active' : ''} ${c.hp === 0 ? 'dead' : ''}">
       <div class="c-header">
-        <input type="number" class="c-initiative" value="${c.initiative}" min="-5" max="30" onchange="updateInitiative(${c.id}, this.value)" title="Iniziativa" />
+        <input type="number" class="stat-input init" value="${c.initiative}" min="-5" max="30" onchange="updateInitiative(${c.id}, this.value)" title="Iniziativa" />
         <div class="c-name">${escHtml(c.name)}</div>
-        <button class="btn-sm remove" onclick="removeC(${c.id})">✕ Rimuovi</button>
+        <button class="btn-sm remove" onclick="removeC(${c.id})">✕</button>
       </div>
-      <div class="c-body">
-        <div class="hp-block">
-          <span class="hp-label">HP</span>
-          <span class="hp-display ${hpClass(c)}">${c.hp} / ${c.maxHp}</span>
+      <div class="c-stats">
+        <span class="stat-lbl">HP</span>
+        <div class="stat-group">
+          <input type="number" class="stat-input hp-cur ${hpClass(c)}" value="${c.hp}" min="0" onchange="updateHp(${c.id}, this.value)" title="HP attuali" />
+          <span class="stat-sep">/</span>
+          <input type="number" class="stat-input hp-max" value="${c.maxHp}" min="1" onchange="updateMaxHp(${c.id}, this.value)" title="HP massimi" />
         </div>
         <div class="hp-bar-wrap">
           <div class="hp-bar" style="width:${pct}%;background:${hpBarColor(c)}"></div>
         </div>
-        <div class="ac-block">CA <span>${c.ac}</span></div>
-      </div>
-      <div class="c-controls">
-        <input type="number" id="hpInput_${c.id}" class="hp-input" value="1" min="0" />
-        <button class="btn-sm dmg" onclick="adjustHp(${c.id}, -1)">− Danno</button>
-        <button class="btn-sm heal" onclick="adjustHp(${c.id}, +1)">+ Cura</button>
+        <span class="stat-lbl">CA</span>
+        <input type="number" class="stat-input ac" value="${c.ac}" min="1" onchange="updateAc(${c.id}, this.value)" title="Classe Armatura" />
       </div>
       <textarea class="c-notes" placeholder="Note…" oninput="updateNotes(${c.id},this.value)">${escHtml(c.notes)}</textarea>
     </div>`;
